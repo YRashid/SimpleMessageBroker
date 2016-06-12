@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * TODO: Организовать shutdown пулов при завершении программы
  * Created by r on 10.06.16.
  */
 public class SendMessagesTimerTask extends TimerTask {
@@ -41,6 +40,7 @@ public class SendMessagesTimerTask extends TimerTask {
                         for (int i = 0; i < countForDelete; i++) {
                             lastMessage = subscriber.getMessageQueue().poll();
                         }
+                        //помечаем в бд последнее переданное сообщение
                         if (lastMessage != null) {
                             backupTasks.markLastSentMessage(subscriber.getSubscriberName(), lastMessage);
                         }
@@ -97,6 +97,10 @@ public class SendMessagesTimerTask extends TimerTask {
 
         return 0;
 
+    }
+
+    public void shutdown(){
+        executor.shutdown();
     }
 
 }

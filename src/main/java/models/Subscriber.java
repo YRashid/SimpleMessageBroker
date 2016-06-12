@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Created by r on 09.06.16.
  */
-// TODO: переимновать в Subscriber, если не вынесу subscriberName в key мапы
 public class Subscriber {
     private final String subscriberName;
     private Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();

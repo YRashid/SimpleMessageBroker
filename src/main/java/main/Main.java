@@ -10,18 +10,23 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import servlets.PublishServlet;
 import servlets.SubscribeServlet;
 
+import java.text.ParseException;
 import java.util.Timer;
 
 /**
  * Created by r on 08.06.16.
  */
 public class Main {
+    private static int port = 8080;
 
     public static void main(String[] args) throws Exception {
         SubscribersManage subscribersManage = new SubscribersManage();
         DBService dbService = new DBService(subscribersManage);
         BackupTasks backupTasks = new BackupTasks(dbService);
         SendMessagesTimerTask sendMessagesTimerTask = new SendMessagesTimerTask(subscribersManage, backupTasks);
+        Timer timer = new Timer(true);
+        timer.scheduleAtFixedRate(sendMessagesTimerTask, 0, 2 * 1000);
+
         //todo: to delete
         dbService.showAll();
 
@@ -32,14 +37,23 @@ public class Main {
         context.addServlet(new ServletHolder(publishServlet), "/publish");
         context.addServlet(new ServletHolder(subscribeServlet), "/subscribe");
 
-        //TODO: добавить возможность выбора порта из аргументов
-        Server server = new Server(8080);
+        if (args[0] != null) {
+            try {
+                port = Integer.parseInt(args[0]);
+            } catch (NumberFormatException unimportant) {
+                //use standard port
+            }
+        }
+        Server server = new Server(port);
         server.setHandler(context);
         server.start();
 
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(sendMessagesTimerTask, 0, 2 * 1000);
 
         server.join();
+
+        timer.cancel();
+        sendMessagesTimerTask.shutdown();
+        backupTasks.shutdown();
+
     }
 }

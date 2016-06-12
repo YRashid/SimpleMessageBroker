@@ -40,4 +40,7 @@ public class BackupTasks {
         });
     }
 
+    public void shutdown(){
+        executor.shutdown();
+    }
 }
