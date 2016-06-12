@@ -2,3 +2,4 @@
 /.idea
 /target
 /backup.mv.db
+/output.log

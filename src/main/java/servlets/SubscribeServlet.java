@@ -3,6 +3,8 @@ package servlets;
 import backup.BackupTasks;
 import models.Subscriber;
 import broker.SubscribersManage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,8 +16,10 @@ import java.io.IOException;
  * Created by r on 08.06.16.
  */
 public class SubscribeServlet extends HttpServlet {
+    private static Logger logger = LoggerFactory.getLogger(SubscribeServlet.class);
     private SubscribersManage subscribersManage;
     private BackupTasks backupTasks;
+
 
     public SubscribeServlet(SubscribersManage subscribersManage, BackupTasks backupTasks) {
         this.subscribersManage = subscribersManage;
@@ -32,16 +36,25 @@ public class SubscribeServlet extends HttpServlet {
             url = req.getParameter("URL");
         }
 
+        if (topic == null || subscriberName == null || url == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().print("Topic and subscriberName and url must be not empty.Topic: " + topic + "; subscriberName: " + subscriberName + "; url: " + url);
+            logger.info("Topic: {} and subscriberName: {} and url: {} must be not empty.", new Object[]{topic, subscriberName, url});
+            return;
+        }
+
+
         Subscriber subscriber = subscribersManage.getSubscriberBySubscriberName(subscriberName);
         // создать очередь для нового подписчика
         if (subscriber == null) {
+            logger.info("New subscriber. Name: {}; Url: {}; Topic: {}", new Object[]{subscriberName, url, topic});
             subscriber = new Subscriber(subscriberName, url);
             subscribersManage.getSubscribersList().add(subscriber);
             backupTasks.initSubscriber(subscriberName, url);
         }
 
         subscriber.getTopics().add(topic);
-        backupTasks.addTopic(topic);
+        backupTasks.addTopic(topic, subscriberName);
         resp.getWriter().print("topic: " + topic + " url:" + url + " subscriberName:" + subscriberName);
         resp.setStatus(HttpServletResponse.SC_OK);
     }

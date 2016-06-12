@@ -4,6 +4,8 @@ import models.Message;
 import models.Subscriber;
 import broker.SubscribersManage;
 import org.h2.jdbcx.JdbcConnectionPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.Set;
  * Created by r on 12.06.16.
  */
 public class DBService {
+    private static Logger logger = LoggerFactory.getLogger(DBService.class);
     private static final String DB_DRIVER = "org.h2.Driver";
     private static final String DB_CONNECTION = "jdbc:h2:./backup";
     private static final String DB_USER = "";
@@ -43,18 +46,41 @@ public class DBService {
 
     }
 
+    //TODO: указать, макс размер сообщения и топика
+    // создание таблиц: меток последнего сообщения, топиков и всех сообщений
+    private void createTablesIfNotExist() {
+        final String createTopicsTableQuery = "CREATE TABLE IF NOT EXISTS topics (id int primary key AUTO_INCREMENT, name varchar(128) UNIQUE)";
+        final String createSubscribersTableQuery = "CREATE TABLE IF NOT EXISTS subscribers (id int primary key AUTO_INCREMENT, subscriberName varchar(128) UNIQUE, url varchar(1024) NOT NULL, lastMessageDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
+        final String createMessagesTableQuery = "CREATE TABLE IF NOT EXISTS messages (id int primary key AUTO_INCREMENT, message varchar(5000), subscriberId int, topicId int, messageDate TIMESTAMP NOT NULL, FOREIGN KEY (subscriberId) REFERENCES subscribers(id), FOREIGN KEY (topicId) REFERENCES topics(id))";
+        final String createSubscribersTopicsTableQuery = "CREATE TABLE IF NOT EXISTS subscribers_topics (id int primary key AUTO_INCREMENT, topicId int, subscriberId int, FOREIGN KEY (subscriberId) REFERENCES subscribers(id), FOREIGN KEY (topicId) REFERENCES topics(id))";
+        try (Connection connection = connectionPool.getConnection()) {
+            connection.setAutoCommit(false);
+
+            Statement stmt = connection.createStatement();
+            stmt.execute(createTopicsTableQuery);
+            stmt.execute(createSubscribersTableQuery);
+            stmt.execute(createMessagesTableQuery);
+            stmt.execute(createSubscribersTopicsTableQuery);
+
+            connection.commit();
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            logger.error("SQLException: ", e);
+        }
+    }
+
     // Получить все топики подписчика
     private Set<String> getSubscriberTopics(String subscriberName) {
         Set<String> result = new HashSet<>();
         try (Connection connection = connectionPool.getConnection()) {
-            PreparedStatement stmt = connection.prepareStatement("SELECT DISTINCT topics.name FROM topics, messages, subscribers  WHERE subscribers.subscriberName=? AND subscribers.id=messages.subscriberId AND  messages.topicId=topics.id");
+            PreparedStatement stmt = connection.prepareStatement("SELECT topics.name FROM topics, subscribers, subscribers_topics WHERE subscribers.subscriberName=? AND subscribers.id=subscribers_topics.subscriberId AND subscribers_topics.topicId=topics.id");
             stmt.setString(1, subscriberName);
             ResultSet resultSet = stmt.executeQuery();
             while (resultSet.next()) {
                 result.add(resultSet.getString(1));
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
         return result;
     }
@@ -71,7 +97,7 @@ public class DBService {
                 result.add(message);
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
         return result;
     }
@@ -86,30 +112,9 @@ public class DBService {
                 result.add(subscriber);
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
         return result;
-    }
-
-    //TODO: указать, макс размер сообщения и топика
-    // создание таблиц: меток последнего сообщения, топиков и всех сообщений
-    private void createTablesIfNotExist() {
-        final String createTopicsTableQuery = "CREATE TABLE IF NOT EXISTS topics (id int primary key AUTO_INCREMENT, name varchar(128) UNIQUE)";
-        final String createSubscribersTableQuery = "CREATE TABLE IF NOT EXISTS subscribers (id int primary key AUTO_INCREMENT, subscriberName varchar(128) UNIQUE, url varchar(1024) NOT NULL, lastMessageDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
-        final String createMessagesTableQuery = "CREATE TABLE IF NOT EXISTS messages (id int primary key AUTO_INCREMENT, message varchar(5000), subscriberId int, topicId int, messageDate TIMESTAMP NOT NULL, FOREIGN KEY (subscriberId) REFERENCES subscribers(id), FOREIGN KEY (topicId) REFERENCES topics(id))";
-        try (Connection connection = connectionPool.getConnection()) {
-            connection.setAutoCommit(false);
-
-            Statement stmt = connection.createStatement();
-            stmt.execute(createTopicsTableQuery);
-            stmt.execute(createSubscribersTableQuery);
-            stmt.execute(createMessagesTableQuery);
-
-            connection.commit();
-            connection.setAutoCommit(true);
-        } catch (SQLException e) {
-            e.printStackTrace(); //логировать
-        }
     }
 
     //Создать поле для записи последнего сообщения нового подписчика
@@ -122,25 +127,35 @@ public class DBService {
             stmt.setString(2, url);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
     }
 
-    //Создать новый топик
-    public void addTopic(String topicName) {
+    //Создать новый топик и добавить его подписчику
+    public void addTopic(String topicName, String subscriberName) {
         int topicId = getTopicIdByTopic(topicName);
-        if (topicId != -1) {
-            //топик уже существует
-            return;
-        }
 
-        final String query = "INSERT INTO topics (name) values (?)";
+
+        final String createTopic = "INSERT INTO topics (name) values (?)";
+        final String linkSubscriberTopic = "INSERT INTO subscribers_topics (topicId, subscriberId) SELECT topics.id, subscribers.id FROM topics, subscribers WHERE topics.name=? AND subscribers.subscriberName=?";
+        PreparedStatement stmt;
         try (Connection connection = connectionPool.getConnection()) {
-            PreparedStatement stmt = connection.prepareStatement(query);
+            connection.setAutoCommit(false);
+            if (topicId == -1) {
+                stmt = connection.prepareStatement(createTopic);
+                stmt.setString(1, topicName);
+                stmt.executeUpdate();
+            }
+
+            stmt = connection.prepareStatement(linkSubscriberTopic);
             stmt.setString(1, topicName);
+            stmt.setString(2, subscriberName);
             stmt.executeUpdate();
+
+            connection.commit();
+            connection.setAutoCommit(true);
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
     }
 
@@ -158,7 +173,7 @@ public class DBService {
             stmt.setTimestamp(4, message.getDate());
             stmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
     }
 
@@ -172,7 +187,7 @@ public class DBService {
             stmt.setString(2, subscriberName);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
     }
 
@@ -189,7 +204,7 @@ public class DBService {
                 topicId = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
         return topicId;
     }
@@ -206,7 +221,7 @@ public class DBService {
                 subscriberId = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
         return subscriberId;
     }
@@ -218,10 +233,10 @@ public class DBService {
             PreparedStatement stmt = connection.prepareStatement("SELECT id, message, subscriberId, topicId, messageDate FROM messages");
             ResultSet resultSet = stmt.executeQuery();
             while (resultSet.next()) {
-                System.out.println("id: " + resultSet.getString(1) + ";  message: " + resultSet.getString(2) + "; subsId: " + resultSet.getString(3) + ";  topicId: " + resultSet.getString(4)+ ";  messageDate: " + resultSet.getString(5));
+                System.out.println("id: " + resultSet.getString(1) + ";  message: " + resultSet.getString(2) + "; subsId: " + resultSet.getString(3) + ";  topicId: " + resultSet.getString(4) + ";  messageDate: " + resultSet.getString(5));
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
 
         System.out.println("\nsubscribers:");
@@ -232,7 +247,7 @@ public class DBService {
                 System.out.println("id: " + resultSet.getString(1) + ";  subsName: " + resultSet.getString(2) + ";  url: " + resultSet.getString(3) + ";  lastMessageDate: " + resultSet.getString(4));
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
 
         System.out.println("\ntopics:");
@@ -243,7 +258,7 @@ public class DBService {
                 System.out.println("id: " + resultSet.getString(1) + ";  name: " + resultSet.getString(2));
             }
         } catch (SQLException e) {
-            e.printStackTrace(); //логировать
+            logger.error("SQLException: ", e);
         }
 
     }
@@ -254,7 +269,7 @@ public class DBService {
         try {
             Class.forName(DB_DRIVER);
         } catch (ClassNotFoundException e) {
-            System.out.println(e.getMessage());
+            logger.error("SQLException: ", e);
         }
         cp = JdbcConnectionPool.create(DB_CONNECTION, DB_USER, DB_PASSWORD);
         return cp;

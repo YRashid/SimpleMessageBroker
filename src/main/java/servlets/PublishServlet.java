@@ -3,6 +3,8 @@ package servlets;
 import backup.BackupTasks;
 import models.Message;
 import broker.SubscribersManage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -18,6 +20,8 @@ import java.util.Date;
 public class PublishServlet extends HttpServlet {
     private SubscribersManage subscribersManage;
     private BackupTasks backupTasks;
+    private static Logger logger = LoggerFactory.getLogger(PublishServlet.class);
+
 
     public PublishServlet(SubscribersManage subscribersManage, BackupTasks backupTasks) {
         this.subscribersManage = subscribersManage;
@@ -32,6 +36,7 @@ public class PublishServlet extends HttpServlet {
         if (topic == null || messageText == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().print("Topic and message must be not empty. topic:" + topic + ", message:" + messageText);
+            logger.info("Topic: {} and message: {} must be not empty.", new Object[]{topic, messageText});
             return;
         }
 
@@ -40,6 +45,7 @@ public class PublishServlet extends HttpServlet {
         if (!isAdded) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().print("The queue is overloaded. The message will not be delivered, please send again the message.");
+            logger.error("Low memory: {}", Runtime.getRuntime().freeMemory());
             return;
         }
         resp.setStatus(HttpServletResponse.SC_OK);

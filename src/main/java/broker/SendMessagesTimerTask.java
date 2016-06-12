@@ -3,6 +3,8 @@ package broker;
 import backup.BackupTasks;
 import models.Message;
 import models.Subscriber;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,6 +22,7 @@ public class SendMessagesTimerTask extends TimerTask {
     private ExecutorService executor = Executors.newFixedThreadPool(4);
     private SubscribersManage subscribersManage;
     private BackupTasks backupTasks;
+    private static Logger logger = LoggerFactory.getLogger(SendMessagesTimerTask.class);
 
     public SendMessagesTimerTask(SubscribersManage subscribersManage, BackupTasks backupTasks) {
         this.subscribersManage = subscribersManage;
@@ -91,7 +94,8 @@ public class SendMessagesTimerTask extends TimerTask {
                 return countForDelete;
             }
 
-        } catch (IOException unimportant) {
+        } catch (IOException e) {
+            logger.error("IOException: ", e);
             //return 0;
         }
 
@@ -99,7 +103,7 @@ public class SendMessagesTimerTask extends TimerTask {
 
     }
 
-    public void shutdown(){
+    public void shutdown() {
         executor.shutdown();
     }
 

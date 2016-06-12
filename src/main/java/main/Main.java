@@ -7,10 +7,11 @@ import broker.SendMessagesTimerTask;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import servlets.PublishServlet;
 import servlets.SubscribeServlet;
 
-import java.text.ParseException;
 import java.util.Timer;
 
 /**
@@ -18,6 +19,8 @@ import java.util.Timer;
  */
 public class Main {
     private static int port = 8080;
+    private static Logger logger = LoggerFactory.getLogger(Main.class);
+
 
     public static void main(String[] args) throws Exception {
         SubscribersManage subscribersManage = new SubscribersManage();
@@ -37,7 +40,7 @@ public class Main {
         context.addServlet(new ServletHolder(publishServlet), "/publish");
         context.addServlet(new ServletHolder(subscribeServlet), "/subscribe");
 
-        if (args[0] != null) {
+        if (args.length > 0 && args[0] != null) {
             try {
                 port = Integer.parseInt(args[0]);
             } catch (NumberFormatException unimportant) {
@@ -47,6 +50,7 @@ public class Main {
         Server server = new Server(port);
         server.setHandler(context);
         server.start();
+        logger.info("Server start on port: {}", port);
 
 
         server.join();

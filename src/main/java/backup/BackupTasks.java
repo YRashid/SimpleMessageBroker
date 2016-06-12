@@ -34,9 +34,9 @@ public class BackupTasks {
         });
     }
 
-    public void addTopic(String topicName) {
+    public void addTopic(String topicName, String subscriberName) {
         executor.submit(() -> {
-            dbService.addTopic(topicName);
+            dbService.addTopic(topicName, subscriberName);
         });
     }
 

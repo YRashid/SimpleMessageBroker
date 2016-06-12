@@ -13,13 +13,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class SubscribersManage {
     private List<Subscriber> subscribersList = new CopyOnWriteArrayList<>();
-    private static final long MAX_FREE_MEMORY = 1000000;
+    private static final long MIN_FREE_MEMORY = 1000000;
 
     //TODO написать чем регулируется freeMemory
     public boolean addMessage(BackupTasks backupTasks, Message message) {
         // Если очередь забилась (слушатели не успевают разгребать), то отправляем ответ писателю,
         //  что сообщение не будет доставлено и просьбой попробовать позже с кодом 500.
-        if (Runtime.getRuntime().freeMemory() - MAX_FREE_MEMORY < 0) {
+        if (Runtime.getRuntime().freeMemory() - MIN_FREE_MEMORY < 0) {
             return false;
         }
 
