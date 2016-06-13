@@ -28,7 +28,7 @@ public class Main {
         BackupTasks backupTasks = new BackupTasks(dbService);
         SendMessagesTimerTask sendMessagesTimerTask = new SendMessagesTimerTask(subscribersManage, backupTasks);
         Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(sendMessagesTimerTask, 0, 2 * 1000);
+        timer.scheduleAtFixedRate(sendMessagesTimerTask, 0, 3 * 1000);
 
         //todo: to delete
         dbService.showAll();

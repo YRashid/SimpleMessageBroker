@@ -67,6 +67,16 @@
             <artifactId>jetty-webapp</artifactId>
             <version>9.3.9.v20160517</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>1.10.19</version>
+        </dependency>
 
     </dependencies>
 

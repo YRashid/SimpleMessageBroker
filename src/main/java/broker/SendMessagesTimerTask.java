@@ -33,7 +33,7 @@ public class SendMessagesTimerTask extends TimerTask {
     public void run() {
         for (Subscriber subscriber : subscribersManage.getSubscribersList()) {
 
-            executor.submit(() -> {
+            executor.execute(() -> {
                 if (subscriber.lockInSendMessage.tryLock()) {
                     try {
                         // отправить все сообщения из очереди
@@ -95,7 +95,7 @@ public class SendMessagesTimerTask extends TimerTask {
             }
 
         } catch (IOException e) {
-            logger.error("IOException: ", e);
+            logger.warn("IOException: ", e);
             //return 0;
         }
 

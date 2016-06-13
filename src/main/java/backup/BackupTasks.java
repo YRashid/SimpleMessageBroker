@@ -17,25 +17,25 @@ public class BackupTasks {
     }
 
     public void initSubscriber(String subscriberName, String url) {
-        executor.submit(() -> {
+        executor.execute(() -> {
             dbService.initSubscriber(subscriberName, url);
         });
     }
 
     public void markLastSentMessage(String subscriberName, Message lastMessage) {
-        executor.submit(() -> {
+        executor.execute(() -> {
             dbService.markLastSentMessage(subscriberName, lastMessage);
         });
     }
 
     public void addMessage(String subscriberName, Message message) {
-        executor.submit(() -> {
+        executor.execute(() -> {
             dbService.addMessage(subscriberName, message);
         });
     }
 
     public void addTopic(String topicName, String subscriberName) {
-        executor.submit(() -> {
+        executor.execute(() -> {
             dbService.addTopic(topicName, subscriberName);
         });
     }
