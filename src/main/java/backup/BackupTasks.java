@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * Ставит задачи записывающие данные в бд в поток.
  * Created by r on 12.06.16.
  */
 public class BackupTasks {

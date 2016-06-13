@@ -14,10 +14,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * TODO: добавить обработку ошибок
  * TODO: надо подчищать бд
  * Необязательно все время передавать в бд имя топика, можно хранить имя топика в струкрутре в памяти
  * и синхронизировать с таблицей в бд. Тогда можно будет передавать сразу id топика. Аналогично с именем подписчика.
+ * <p>
+ * Управляет базой данных. Устанавливает сооедининеие, сохраняет сообщения, подписчиков, топики,
+ * помечает последнее прочитанное сообщение в бд, создает таблицы.
+ * При запуске программы, загружает данные из бд в память. Данные - имена подписчиков, их топики, неотправленные сообщения.
+ * <p>
  * Created by r on 12.06.16.
  */
 public class DBService {
@@ -46,7 +50,6 @@ public class DBService {
 
     }
 
-    //TODO: указать, макс размер сообщения и топика
     // создание таблиц: меток последнего сообщения, топиков и всех сообщений
     private void createTablesIfNotExist() {
         final String createTopicsTableQuery = "CREATE TABLE IF NOT EXISTS topics (id int primary key AUTO_INCREMENT, name varchar(128) UNIQUE)";
@@ -224,43 +227,6 @@ public class DBService {
             logger.error("SQLException: ", e);
         }
         return subscriberId;
-    }
-
-    //TODO: to delete
-    public void showAll() {
-        System.out.println("Messages: ");
-        try (Connection connection = connectionPool.getConnection()) {
-            PreparedStatement stmt = connection.prepareStatement("SELECT id, message, subscriberId, topicId, messageDate FROM messages");
-            ResultSet resultSet = stmt.executeQuery();
-            while (resultSet.next()) {
-                System.out.println("id: " + resultSet.getString(1) + ";  message: " + resultSet.getString(2) + "; subsId: " + resultSet.getString(3) + ";  topicId: " + resultSet.getString(4) + ";  messageDate: " + resultSet.getString(5));
-            }
-        } catch (SQLException e) {
-            logger.error("SQLException: ", e);
-        }
-
-        System.out.println("\nsubscribers:");
-        try (Connection connection = connectionPool.getConnection()) {
-            PreparedStatement stmt = connection.prepareStatement("SELECT id, subscriberName, url, lastMessageDate FROM subscribers");
-            ResultSet resultSet = stmt.executeQuery();
-            while (resultSet.next()) {
-                System.out.println("id: " + resultSet.getString(1) + ";  subsName: " + resultSet.getString(2) + ";  url: " + resultSet.getString(3) + ";  lastMessageDate: " + resultSet.getString(4));
-            }
-        } catch (SQLException e) {
-            logger.error("SQLException: ", e);
-        }
-
-        System.out.println("\ntopics:");
-        try (Connection connection = connectionPool.getConnection()) {
-            PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM topics");
-            ResultSet resultSet = stmt.executeQuery();
-            while (resultSet.next()) {
-                System.out.println("id: " + resultSet.getString(1) + ";  name: " + resultSet.getString(2));
-            }
-        } catch (SQLException e) {
-            logger.error("SQLException: ", e);
-        }
-
     }
 
     // Create H2 JdbcConnectionPool

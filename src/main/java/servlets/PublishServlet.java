@@ -15,6 +15,8 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 /**
+ * Сервлет принимающий /publish запросы. Добавляет переданное сообщение в очереди сообщений тех подписчиков,
+ * кто подписан на топик этого сообщения (т.е вызывает SubscribersManage#addMessage). При успешном добавлении возвращает код 200.
  * Created by r on 08.06.16.
  */
 public class PublishServlet extends HttpServlet {

@@ -15,6 +15,9 @@ import servlets.SubscribeServlet;
 import java.util.Timer;
 
 /**
+ * Стартует при запуске проекта. Поднимает веб-сервер, на переданном порту (по умолчанию 8080).
+ * Инициализирует все необходимые классы, запускает таймер - выполняющий передачу новых сообщений подписчикам.
+ * <p>
  * Created by r on 08.06.16.
  */
 public class Main {
@@ -29,9 +32,6 @@ public class Main {
         SendMessagesTimerTask sendMessagesTimerTask = new SendMessagesTimerTask(subscribersManage, backupTasks);
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(sendMessagesTimerTask, 0, 3 * 1000);
-
-        //todo: to delete
-        dbService.showAll();
 
         PublishServlet publishServlet = new PublishServlet(subscribersManage, backupTasks);
         SubscribeServlet subscribeServlet = new SubscribeServlet(subscribersManage, backupTasks);
@@ -51,7 +51,7 @@ public class Main {
         server.setHandler(context);
         server.start();
         logger.info("Server start on port: {}", port);
-
+        System.out.println("Server start on port: " + port);
 
         server.join();
 

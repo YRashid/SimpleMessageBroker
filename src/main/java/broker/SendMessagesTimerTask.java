@@ -16,6 +16,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * раз в 3 секунды, проходится по очередям сообщений всех подписчиков, и если они имеют сообщения, то отправляет их.
+ * Если сообщения успешно доставлены, то помечает в бд, какое последнее сообщение было успешно доставлено.
+ * Лок для каждого подписчика нужен, чтобы при долгой отправке сообщений, эти же сообщения не добавились на отправку в другом потоке через следующие 3 секунды.
  * Created by r on 10.06.16.
  */
 public class SendMessagesTimerTask extends TimerTask {
@@ -95,7 +98,7 @@ public class SendMessagesTimerTask extends TimerTask {
             }
 
         } catch (IOException e) {
-            logger.warn("IOException: ", e);
+            logger.warn("Subscriber does not receive messages.");
             //return 0;
         }
 

@@ -3,7 +3,7 @@
 
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>./output.log</File>
+        <File>./smb_output.log</File>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <FileNamePattern>logFile.%d{yyyy-MM-dd}.%i.log</FileNamePattern>

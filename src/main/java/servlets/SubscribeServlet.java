@@ -13,6 +13,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
+ * Сервлет принимающий /subscribe запросы. Создает очередь сообщений для нового подписчика.
+ * Добавляет новый топик подписчику. Ставит задачу на добавление нового подписчика в бд.
+ *
  * Created by r on 08.06.16.
  */
 public class SubscribeServlet extends HttpServlet {
@@ -31,6 +34,7 @@ public class SubscribeServlet extends HttpServlet {
         resp.setContentType("text/html; charset=UTF-8");
         String subscriberName = req.getParameter("subscriberName");
         String topic = req.getParameter("topic");
+        // url игнорируется, если подписчик существует, но передавать все равно обязательно.
         String url = req.getParameter("url");
         if (url == null) {
             url = req.getParameter("URL");
@@ -55,7 +59,7 @@ public class SubscribeServlet extends HttpServlet {
 
         subscriber.getTopics().add(topic);
         backupTasks.addTopic(topic, subscriberName);
-        resp.getWriter().print("topic: " + topic + " url:" + url + " subscriberName:" + subscriberName);
+//        resp.getWriter().print("topic: " + topic + " url:" + url + " subscriberName:" + subscriberName);
         resp.setStatus(HttpServletResponse.SC_OK);
     }
 }
