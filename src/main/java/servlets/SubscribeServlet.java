@@ -48,6 +48,7 @@ public class SubscribeServlet extends HttpServlet {
         }
 
 
+        //TODO: ИСПРАВИТЬ - поиск и добавление должны быть атомарными
         Subscriber subscriber = subscribersManage.getSubscriberBySubscriberName(subscriberName);
         // создать очередь для нового подписчика
         if (subscriber == null) {
